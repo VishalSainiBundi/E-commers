@@ -4,7 +4,8 @@
 // import { useRouter, usePathname } from "next/navigation";
 
 import { getBrandById } from "@/api-colls/brand"
-import BrandEdit from "@/Components/admin/BrandEdit"
+import BrandEdit from "@/Components/admin/brandEdit"
+
 
 export default async function EditBrand({ params }) {
   const resolvePromise= await params

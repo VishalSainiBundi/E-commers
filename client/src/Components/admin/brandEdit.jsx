@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { axiosApiInstrector, generateSlug } from "@/helper/helper";
 import { useRouter } from "next/navigation";
 
-const EditBrand=({ brand, baseUrl })=> {
+const BrandEdit=({ brand, baseUrl })=> {
   const categoryRef = useRef();
   const slugRef = useRef();
   const router=useRouter()
@@ -200,3 +200,5 @@ const EditBrand=({ brand, baseUrl })=> {
     </div>
   );
 }
+
+export default BrandEdit
