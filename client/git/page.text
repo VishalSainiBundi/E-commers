@@ -1,0 +1,5 @@
+VishalSainiBundi
+git remote add origin https://github.com/VishalSainiBundi/Blinkit.git
+https://github.com/VishalSainiBundi/Blinkit.git
+git config --global user.name "VishalSainiBundi"
+git config --global user.email "vs4096674@gmail.com"
