@@ -3,7 +3,7 @@ import AddToCartButton from "./AddToCartButton";
 // import { FaHeart } from "react-icons/fa";
 import AddToWishButton from "./AddWishlist";
 
-function ProductCardStore({
+const ProductCardStore=({
   _id,
   img,
   name,
@@ -11,7 +11,7 @@ function ProductCardStore({
   discount_percentage,
   final_price,
   stock,
-}) {
+}) =>{
   return (
     <article className="bg-white rounded-2xl p-5 shadow-lg border border-slate-100 space-y-4 relative transition hover:shadow-xl">
       {/* Discount Badge */}

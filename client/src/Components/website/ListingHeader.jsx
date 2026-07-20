@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-export default function ListingHeader() {
+const ListingHeader=()=> {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -67,3 +67,5 @@ export default function ListingHeader() {
     </div>
   );
 }
+
+export default ListingHeader

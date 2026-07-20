@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { axiosApiInstrector, generateSlug } from "@/helper/helper";
 import { useRouter } from "next/navigation";
 
-export default function EditBrand({ brand, baseUrl }) {
+const EditBrand=({ brand, baseUrl })=> {
   const categoryRef = useRef();
   const slugRef = useRef();
   const router=useRouter()
