@@ -8,7 +8,6 @@ export const dynamic = "force-dynamic";
 export default async function ColorListing() {
   const res = await getColor();
 const color = res.color || [];
-  console.log(color)
 
   return (
     <div className="min-h-screen p-10 bg-gray-50 text-gray-900 max-w-full mx-auto">

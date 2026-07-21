@@ -41,7 +41,7 @@ export default function Storemain() {
             colors={exampleColors}
             initialState={{}}
             onApply={(filters, sortValue) => {
-              console.log("Applied (store page):", filters, sortValue);
+              if (process.env.NODE_ENV !== "production") console.log("Applied (store page):", filters, sortValue);
             }}
           />
         </div>

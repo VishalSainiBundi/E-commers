@@ -4,7 +4,6 @@ const GameCard = async () => {
 
     const ProductJson=await getProduct({status:true})
     const product = ProductJson.product 
-    console.log(product,"PROduct")
   return (
     <div className="w-[360px] bg-white rounded-xl shadow-md p-4">
       {/* Header */}

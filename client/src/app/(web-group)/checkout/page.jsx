@@ -55,7 +55,6 @@ export default function CheckoutPage() {
     imgUrl: item.imgUrl,
   };
 });
-console.log(cart.data,"CartDara")
     // 🔥 FIX: Match schema exactly
     const shippingAddress =
       user?.data?.shipping_address?.[currentAddress] || {};
@@ -110,7 +109,7 @@ console.log(cart.data,"CartDara")
                 alert("Payment verification failed!");
               }
             } catch (err) {
-              console.log(err);
+              if (process.env.NODE_ENV !== "production") console.error(err);
               alert("Payment verification error");
             }
           },
@@ -123,7 +122,7 @@ console.log(cart.data,"CartDara")
       alert(response.data.msg);
     }
   } catch (err) {
-    console.log(err);
+    if (process.env.NODE_ENV !== "production") console.error(err);
     alert("Something went wrong while placing order");
   }
 };

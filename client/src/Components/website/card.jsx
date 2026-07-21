@@ -19,7 +19,7 @@ const Home_Productcard = async () => {
 const other_img_Url="http://localhost:5000/img/product/other_image/"
 
 
-  console.log(Product, "Product");
+  if (process.env.NODE_ENV !== "production") console.log(Product, "Product");
 
   return (
     <div className="flex  gap-8 pt-15 shrink-0 flex-nowrap overflow-x-auto"> {/* Container for proper alignment */}

@@ -115,18 +115,13 @@ discountPercentageRef.current.value=disc.toFixed(2)
   axiosApiInstrector.post("product/create",formData)
   .then(
 (success)=>{
-  console.log(success)
-
 notify(success.data.msg,0)
 router.push("/admin/product")
-
 }
   ).catch(
 (error)=>{
-  console.log(error)
-  console.log(error.data.msg)
-  notify(error.success.data.msg,1)
-
+  if (process.env.NODE_ENV !== "production") console.error(error);
+  notify(error?.response?.data?.msg ?? "Something went wrong",1)
 }
   )
     

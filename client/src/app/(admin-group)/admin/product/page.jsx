@@ -10,7 +10,6 @@ export default async function productListing() {
   const res = await getProduct();
   const product = res.product ?? [];
   const img_Url = res.img_Url ?? "";
-console.log(res)
   return (
     <div className="min-h-screen bg-gray-100 p-8">
 

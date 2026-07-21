@@ -14,8 +14,6 @@ export default async function Page({ searchParams }) {
   if (params?.sortby) query.sortby =  params.sortby;
   if (params?.limit) query.limit =  params.limit;
 
-  console.log("myquery", query);
-
   const productJSON = await getProduct(query);
 
   const productData = productJSON?.product || [];

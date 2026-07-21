@@ -14,13 +14,12 @@ if (queryParams.home) query.append("home", queryParams.home);
     try {
         const response = await axiosApiInstrector.get("category");
         if (response.data.flag == 0) {
-            // console.log(response.data);
             return response.data;
         } else {
             return [];
         }
     } catch (error) {
-        console.log(error);
+        if (process.env.NODE_ENV !== "production") console.error(error);
         return [];
     }
 }
@@ -29,13 +28,12 @@ async function getCategoryById(id) {
     try {
         const response = await axiosApiInstrector.get(`category/${id}`);
         if (response.data.flag == 0) {
-            // console.log(response.data);
             return response.data;
         } else {
             return {};
         }
     } catch (error) {
-        console.log(error);
+        if (process.env.NODE_ENV !== "production") console.error(error);
         return {};
     }
 }

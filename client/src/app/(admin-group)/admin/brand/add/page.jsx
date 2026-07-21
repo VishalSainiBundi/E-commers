@@ -36,7 +36,7 @@ export default function AddBrand() {
 
       })
       .catch((error) => {
-        console.log(error);
+        if (process.env.NODE_ENV !== "production") console.error(error);
       });
   };
 

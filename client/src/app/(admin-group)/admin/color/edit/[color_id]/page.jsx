@@ -5,7 +5,6 @@
  export default async function EditCategory({ params }) {
   const resolvePromise= await params
   const id=resolvePromise?.category_id
-  console.log(id)
 
   // यहाँ API call करें
   // const colorData = await getColorById(id);

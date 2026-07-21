@@ -32,7 +32,7 @@ export default function EditCategory({ category, baseUrl }) {
           router.push("/admin/category")
         }
       })
-      .catch((error) => console.log(error));
+      .catch((error) => { if (process.env.NODE_ENV !== "production") console.error(error); });
   };
 
   return (

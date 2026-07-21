@@ -15,8 +15,7 @@ async function getBrand() {
         }
 
     } catch (error) {
-        console.log(error);
-
+        if (process.env.NODE_ENV !== "production") console.error(error);
         return {
             brand: [],
             img_Url: "",
@@ -30,13 +29,12 @@ async function getBrandById(id) {
     try {
         const response = await axiosApiInstrector.get(`brand/${id}`);
         if (response.data.flag == 0) {
-            console.log(response.data);
             return response.data;
         } else {
             return {};
         }
     } catch (error) {
-        console.log(error);
+        if (process.env.NODE_ENV !== "production") console.error(error);
         return {};
     }
 }

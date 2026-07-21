@@ -15,18 +15,14 @@ if (searchParams.home) query.append("home", searchParams.home);
   if (searchParams.brand_ids) query.append("brand_ids", searchParams.brand_ids);
   if(searchParams.sortby) query.append("sortby",searchParams.sortby)
 
-
-    console.log(query,"api")
-        
         const response = await axiosApiInstrector.get(`product?${query.toString()}`);
         if (response.data.flag == 0) {
-            // console.log(response.data);
             return response.data;
         } else {
             return [];
         }
     } catch (error) {
-        console.log(error);
+        if (process.env.NODE_ENV !== "production") console.error(error);
         return [];
     }
 }
@@ -35,13 +31,12 @@ async function getProductById(id) {
     try {
         const response = await axiosApiInstrector.get(`product/${id}`);
         if (response.data.flag == 0) {
-            // console.log(response.data);
             return response.data;
         } else {
             return {};
         }
     } catch (error) {
-        console.log(error);
+        if (process.env.NODE_ENV !== "production") console.error(error);
         return {};
     }
 }

@@ -11,7 +11,7 @@
     "@fortawesome/react-fontawesome": "^3.1.1",
     "axios": "^1.13.2",
     "lucide-react": "^0.562.0",
-    "next": "16.0.1",
+    "next": "16.2.10",
     "primereact": "^10.9.7",
     "quill": "^2.0.3",
     "razorpay": "^2.9.6",
@@ -26,7 +26,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "babel-plugin-react-compiler": "1.0.0",
-    "baseline-browser-mapping": "^2.10.10",
+    "baseline-browser-mapping": "2.10.44",
     "tailwindcss": "^4"
   }
 }

@@ -36,7 +36,7 @@ export default function ColorEdit({ color }) {
         notify(response.data.message, response.data.flag);
       })
       .catch((error) => {
-        console.log(error);
+        if (process.env.NODE_ENV !== "production") console.error(error);
         notify("Server error", 1);
       });
   };

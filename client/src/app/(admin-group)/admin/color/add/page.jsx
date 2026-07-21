@@ -26,11 +26,10 @@ export default function AddColor() {
       code: colorRef.current.value,
     })
       .then((response) => {
-        console.log(response.data);
         notify(response.data.message, response.data.flag);
       })
       .catch((error) => {
-        console.log(error);
+        if (process.env.NODE_ENV !== "production") console.error(error);
         notify("Server error", 1);
       });
   };
