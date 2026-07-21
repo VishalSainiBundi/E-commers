@@ -3,7 +3,7 @@
 import { Images } from "lucide-react";
 import { useState } from "react";
 
-import FileUpload from "@/components/common/FileUpload";
+import FileUpload from "@/Components/common/FileUpload";
 import { axiosApiInstance } from "@/helper/helper";
 
 export default function MultipleImage({ api_url, product_id, other_images }) {

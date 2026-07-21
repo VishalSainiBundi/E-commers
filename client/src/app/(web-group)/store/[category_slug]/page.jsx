@@ -1,6 +1,6 @@
 import { getProduct } from "@/api-colls/product";
-import ListingHeader from "@/components/website/ListingHeader";
-import ProductCardStore from "@/components/website/ProductCart2";
+import ListingHeader from "@/Components/website/ListingHeader";
+import ProductCardStore from "@/Components/website/ProductCart2";
 import SideBar from "@/Components/website/SideBar";
 
 /* =========================   Root Page Component ========================= */
