@@ -3,44 +3,61 @@ import { createSlice } from "@reduxjs/toolkit";
 const UserSlice = createSlice({
   name: "user",
   initialState: {
-    data: null,
-    token: null,
-    loginAt: null,
+    data:        null,
+    token:       null,
+    isVerified:  false,
+    loginAt:     null,
   },
   reducers: {
-    setData(current_state, { payload }) {
-      current_state.data = payload.user || null;
-      current_state.token = payload.token || null;
-      current_state.loginAt = Date.now(); // always set current time
+    setData(state, { payload }) {
+      state.data       = payload.user  || null;
+      state.token      = payload.token || null;
+      state.isVerified = payload.isVerified ?? (payload.user?.isVerified ?? false);
+      state.loginAt    = Date.now();
 
-      // Save to localStorage safely
-      if (payload.user) localStorage.setItem("user", JSON.stringify(payload.user));
+      if (payload.user)  localStorage.setItem("user",       JSON.stringify(payload.user));
+      if (payload.token) localStorage.setItem("token",      JSON.stringify(payload.token));
+      localStorage.setItem("isVerified", JSON.stringify(state.isVerified));
+      localStorage.setItem("loginAt",    JSON.stringify(state.loginAt));
+    },
+
+    // Call this after verify-otp succeeds to refresh the user doc in redux
+    // without changing the token (the new full token replaces the provisional one)
+    setVerified(state, { payload }) {
+      state.isVerified = true;
+      state.data       = payload.user  || state.data;
+      state.token      = payload.token || state.token;
+
+      if (payload.user)  localStorage.setItem("user",  JSON.stringify(payload.user));
       if (payload.token) localStorage.setItem("token", JSON.stringify(payload.token));
-      localStorage.setItem("loginAt", JSON.stringify(current_state.loginAt));
+      localStorage.setItem("isVerified", JSON.stringify(true));
     },
 
-    lstouser(current_state) {
-      const lsData = localStorage.getItem("user");
-      const lsToken = localStorage.getItem("token");
-      const lsLoginAt = localStorage.getItem("loginAt");
+    lstouser(state) {
+      const lsData       = localStorage.getItem("user");
+      const lsToken      = localStorage.getItem("token");
+      const lsLoginAt    = localStorage.getItem("loginAt");
+      const lsIsVerified = localStorage.getItem("isVerified");
 
-      // Only parse if value exists and is not "undefined"
-      if (lsData && lsData !== "undefined") current_state.data = JSON.parse(lsData);
-      if (lsToken && lsToken !== "undefined") current_state.token = JSON.parse(lsToken);
-      if (lsLoginAt && lsLoginAt !== "undefined") current_state.loginAt = JSON.parse(lsLoginAt);
+      if (lsData       && lsData       !== "undefined") state.data       = JSON.parse(lsData);
+      if (lsToken      && lsToken      !== "undefined") state.token      = JSON.parse(lsToken);
+      if (lsLoginAt    && lsLoginAt    !== "undefined") state.loginAt    = JSON.parse(lsLoginAt);
+      if (lsIsVerified && lsIsVerified !== "undefined") state.isVerified = JSON.parse(lsIsVerified);
     },
 
-    logout(current_state) {
-      current_state.data = null;
-      current_state.token = null;
-      current_state.loginAt = null;
+    logout(state) {
+      state.data       = null;
+      state.token      = null;
+      state.isVerified = false;
+      state.loginAt    = null;
 
       localStorage.removeItem("user");
       localStorage.removeItem("token");
       localStorage.removeItem("loginAt");
+      localStorage.removeItem("isVerified");
     },
   },
 });
 
-export const { setData, lstouser, logout } = UserSlice.actions;
+export const { setData, setVerified, lstouser, logout } = UserSlice.actions;
 export default UserSlice.reducer;

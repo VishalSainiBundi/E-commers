@@ -13,6 +13,7 @@ const OrderRouter= require('./routes/OrderRouter')
 const { verifyWebsiteUser } = require('./middleware/WebsiteAuth')
 const Adminrouter=require('./routes/AdminRouter')
 const wishRouter = require('./routes/wishRoute')
+const AddressRouter = require('./routes/addressRoute')
 
 const app = express()
 app.use(express.json())
@@ -44,7 +45,8 @@ app.use('/user',UserRouter) ;
 app.use('/cart',CartRouter)   
 app.use('/order',verifyWebsiteUser,OrderRouter)  
 app.use('/admin',Adminrouter)                                                                                                  
-app.use('/wish',wishRouter)                                                                                                  
+app.use('/wish',wishRouter)
+app.use('/address', verifyWebsiteUser, AddressRouter)                                                                                                  
 
 
 
