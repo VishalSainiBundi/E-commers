@@ -4,13 +4,13 @@ import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
 import { useRazorpay } from "react-razorpay";
-import { FaChevronRight, FaCheckCircle, FaTruck, FaCreditCard } from "react-icons/fa";
+import { FaChevronRight, FaCheckCircle, FaTruck, FaCreditCard, FaSpinner } from "react-icons/fa";
 import Link from "next/link";
 import { emptyCart } from "@/redux/reduceres/cartReducer";
-import { axiosApiInstrector, toLocalPrice } from "@/helper/helper";
+import { axiosApiInstrector, toLocalPrice, notify } from "@/helper/helper";
 
 export default function CheckoutPage() {
-  const { Razorpay, isLoading: isRazorpayLoading, error: razorpayError } = useRazorpay();
+  const { Razorpay, isLoading: isRazorpayLoading } = useRazorpay();
   const dispatch = useDispatch();
   const router = useRouter();
 
@@ -28,56 +28,89 @@ export default function CheckoutPage() {
   }, [user]);
 
   const orderPlaceHandler = async () => {
-  if (!user?.token) {
-    alert("Please login first!");
-    return;
-  }
+    // ── Auth check ──────────────────────────────────────────────────────────
+    if (!user?.token) {
+      notify("Please login first!", 1);
+      router.push("/user-auth?redirect=/checkout");
+      return;
+    }
 
-  if (!cart?.data || cart.data.length === 0) {
-    alert("Cart is empty!");
-    return;
-  }
+    // ── Cart check ──────────────────────────────────────────────────────────
+    if (!cart?.data || cart.data.length === 0) {
+      notify("Your cart is empty!", 1);
+      return;
+    }
 
-  const extraShipping = paymentMode === 0 ? 49 : 0;
-  const totalAmount = (cart?.final_total || 0) + extraShipping;
+    // ── Address check ───────────────────────────────────────────────────────
+    const addresses = user?.data?.shipping_address || [];
+    if (addresses.length === 0) {
+      notify("Please add a shipping address before placing your order.", 1);
+      return;
+    }
+    const selectedAddress = addresses[currentAddress];
+    if (
+      !selectedAddress?.addressLine1 ||
+      !selectedAddress?.city ||
+      !selectedAddress?.state ||
+      !selectedAddress?.country ||
+      !selectedAddress?.pincode
+    ) {
+      notify("Selected shipping address is incomplete. Please update it.", 1);
+      return;
+    }
 
-  try {
-    // 🔥 FIX: Map cart → backend format
-   const productDetails = cart.data.map((item) => {
-  if (!item._id) throw new Error("Cart item _id missing");
+    const extraShipping = paymentMode === 0 ? 49 : 0;
+    const totalAmount = (cart?.final_total || 0) + extraShipping;
 
-  return {
-    id: item._id, // ✅ backend requires this
-    name: item.name,
-    qty: item.qty,
-    final_price: item.final_price,
-    original_price: item.original_price,
-    imgUrl: item.imgUrl,
-  };
-});
-    // 🔥 FIX: Match schema exactly
-    const shippingAddress =
-      user?.data?.shipping_address?.[currentAddress] || {};
+    // ── Build productDetails ─────────────────────────────────────────────────
+    // cartReducer stores items with `id` (not `_id`) — use item.id
+    const productDetails = cart.data.map((item) => ({
+      id: item.id,           // ✅ cartReducer uses `id` field
+      name: item.name,
+      qty: item.qty,
+      final_price: item.final_price,
+      original_price: item.original_price,
+      imgUrl: item.imgUrl || "",
+    }));
 
-    const response = await axiosApiInstrector.post("/order", {
-  userId: user?.data?._id,
-  paymentMode,
-  totalAmount,
-  shippingAddress,
-  productDetails, // ✅ SAME NAME (backend destructuring)
-},
-      {
-        headers: { authorization: user?.token },
-      }
-    );
+    // ── Build shippingAddress ────────────────────────────────────────────────
+    const shippingAddress = {
+      name: selectedAddress.name || user?.data?.name || "",
+      addressLine1: selectedAddress.addressLine1,
+      addressLine2: selectedAddress.addressLine2 || "",
+      city: selectedAddress.city,
+      state: selectedAddress.state,
+      country: selectedAddress.country,
+      pincode: selectedAddress.pincode,
+      contact: selectedAddress.contact || selectedAddress.contect || "",
+    };
 
-    if (response.data.flag === 0) {
-      const { order_id, razorpay_order_id } = response.data;
+    setIsPlacingOrder(true);
+    try {
+      const response = await axiosApiInstrector.post(
+        "/order",
+        {
+          userId: user?.data?._id,
+          paymentMode,
+          totalAmount,
+          shippingAddress,
+          productDetails,
+        },
+        { headers: { authorization: user?.token } }
+      );
 
-      if (paymentMode === 0) {
-        dispatch(emptyCart());
-        router.push("/order-placed/" + order_id);
-      } else {
+      if (response.data.flag === 0) {
+        const { order_id, razorpay_order_id } = response.data;
+
+        // ── COD ──────────────────────────────────────────────────────────────
+        if (paymentMode === 0) {
+          dispatch(emptyCart());
+          notify("Order placed successfully!", 0);
+          router.push("/order-placed/" + order_id);
+          return;
+        }
+
+        // ── Online payment (Razorpay) ─────────────────────────────────────────
         const options = {
           key: process.env.NEXT_PUBLIC_RAZORPAY_API_KEY,
           amount: totalAmount * 100,
@@ -85,47 +118,64 @@ export default function CheckoutPage() {
           name: "ISHOP",
           order_id: razorpay_order_id,
           prefill: {
-            name: user?.data?.name,
-            email: user?.data?.email,
+            name: user?.data?.name || "",
+            email: user?.data?.email || "",
           },
           theme: { color: "#00bba7" },
-          handler: async function (response) {
+          handler: async function (razorpayResponse) {
             try {
               const verify = await axiosApiInstrector.post(
                 "/order/verify-payment",
                 {
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
+                  razorpay_order_id: razorpayResponse.razorpay_order_id,
+                  razorpay_payment_id: razorpayResponse.razorpay_payment_id,
+                  razorpay_signature: razorpayResponse.razorpay_signature,
                   order_id,
                 },
-                { headers: { authorization: user.token } }
+                { headers: { authorization: user?.token } }
               );
 
               if (verify.data.flag === 0) {
                 dispatch(emptyCart());
+                notify("Payment successful! Order placed.", 0);
                 router.push("/order-placed/" + order_id);
               } else {
-                alert("Payment verification failed!");
+                notify(verify.data.msg || "Payment verification failed. Contact support.", 1);
               }
             } catch (err) {
               if (process.env.NODE_ENV !== "production") console.error(err);
-              alert("Payment verification error");
+              notify("Payment verification error. Please contact support.", 1);
             }
+          },
+          modal: {
+            ondismiss: () => {
+              notify("Payment cancelled.", 1);
+              setIsPlacingOrder(false);
+            },
           },
         };
 
-        const razorpay = new Razorpay(options);
-        razorpay.open();
+        const rzp = new Razorpay(options);
+        rzp.on("payment.failed", (resp) => {
+          notify(`Payment failed: ${resp.error.description}`, 1);
+          setIsPlacingOrder(false);
+        });
+        rzp.open();
+        // keep isPlacingOrder true until handler resolves
+        return;
+      } else {
+        notify(response.data.msg || "Failed to place order. Please try again.", 1);
       }
-    } else {
-      alert(response.data.msg);
+    } catch (err) {
+      if (process.env.NODE_ENV !== "production") console.error(err);
+      notify(
+        err?.response?.data?.msg || "Something went wrong. Please try again.",
+        1
+      );
+    } finally {
+      setIsPlacingOrder(false);
     }
-  } catch (err) {
-    if (process.env.NODE_ENV !== "production") console.error(err);
-    alert("Something went wrong while placing order");
-  }
-};
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -135,6 +185,7 @@ export default function CheckoutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
           {/* Left Section */}
           <div className="lg:col-span-2 space-y-6">
+
             {/* Shipping Address */}
             <div className="bg-white rounded-2xl shadow-lg p-8 border border-slate-100">
               <div className="flex items-center gap-3 mb-6">
@@ -142,19 +193,21 @@ export default function CheckoutPage() {
                 <h2 className="text-2xl font-bold text-slate-800">Shipping Address</h2>
               </div>
 
-              {user?.data?.shipping_address?.length === 0 ? (
-                <p className="text-slate-500 text-center py-8">No shipping addresses found.</p>
+              {!user?.data?.shipping_address?.length ? (
+                <p className="text-slate-500 text-center py-8">
+                  No shipping addresses found. Please add one in your profile.
+                </p>
               ) : (
                 <div className="space-y-3">
-                  {user?.data?.shipping_address?.map((address, idx) => (
+                  {user.data.shipping_address.map((address, idx) => (
                     <div
                       key={idx}
+                      onClick={() => setCurrentAddress(idx)}
                       className={`p-5 rounded-xl border-2 cursor-pointer transition-all ${
                         idx === currentAddress
                           ? "border-teal-500 bg-teal-50"
                           : "border-slate-200 hover:border-slate-300 bg-slate-50"
                       }`}
-                      onClick={() => setCurrentAddress(idx)}
                     >
                       <div className="flex items-start gap-4">
                         <input
@@ -165,7 +218,9 @@ export default function CheckoutPage() {
                         />
                         <div className="flex-1">
                           <div className="flex justify-between items-start">
-                            <p className="font-semibold text-slate-800">{address.name}</p>
+                            <p className="font-semibold text-slate-800">
+                              {address.name || user.data.name}
+                            </p>
                             {idx === user?.data?.default_address && (
                               <span className="text-xs font-bold bg-teal-500 text-white px-3 py-1 rounded-full">
                                 Default
@@ -173,12 +228,18 @@ export default function CheckoutPage() {
                             )}
                           </div>
                           <p className="text-slate-600 text-sm mt-2">
-                            {address.addressLine1}, {address.addressLine2}
+                            {address.addressLine1}
+                            {address.addressLine2 ? `, ${address.addressLine2}` : ""}
                           </p>
                           <p className="text-slate-600 text-sm">
-                            {address.city}, {address.state}, {address.country} {address.pincode}
+                            {address.city}, {address.state}, {address.country}{" "}
+                            {address.pincode}
                           </p>
-                          <p className="text-slate-600 text-sm mt-2">📞 {address.contact}</p>
+                          {(address.contact || address.contect) && (
+                            <p className="text-slate-600 text-sm mt-1">
+                              📞 {address.contact || address.contect}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -195,8 +256,10 @@ export default function CheckoutPage() {
               </div>
 
               <div className="space-y-3">
-                {[{ id: 0, label: "Cash on Delivery", desc: "Pay when you receive" },
-                  { id: 1, label: "Pay Now", desc: "Secure online payment" }].map((method) => (
+                {[
+                  { id: 0, label: "Cash on Delivery", desc: "Pay when you receive (+₹49 shipping)" },
+                  { id: 1, label: "Pay Now", desc: "Secure online payment (free shipping)" },
+                ].map((method) => (
                   <label
                     key={method.id}
                     className={`flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all ${
@@ -227,6 +290,8 @@ export default function CheckoutPage() {
             original_total={cart?.original_total}
             paymentMode={paymentMode}
             orderPlaceHandler={orderPlaceHandler}
+            isPlacingOrder={isPlacingOrder}
+            isRazorpayLoading={isRazorpayLoading}
           />
         </div>
       </div>
@@ -234,22 +299,24 @@ export default function CheckoutPage() {
   );
 }
 
-// ---------------- Breadcrumb ----------------
+// ── Breadcrumb ────────────────────────────────────────────────────────────────
 function Breadcrumb() {
   return (
     <div className="flex items-center text-sm text-slate-600">
-      <span className="hover:text-teal-600 cursor-pointer">Home</span>
+      <Link href="/" className="hover:text-teal-600 cursor-pointer">Home</Link>
       <FaChevronRight className="mx-3 text-xs" />
-      <span className="hover:text-teal-600 cursor-pointer">Pages</span>
+      <Link href="/cart" className="hover:text-teal-600 cursor-pointer">Cart</Link>
       <FaChevronRight className="mx-3 text-xs" />
       <span className="text-teal-600 font-semibold">Checkout</span>
     </div>
   );
 }
 
-// ---------------- Order Summary ----------------
-function OrderSummary({ final_total, original_total, paymentMode, orderPlaceHandler }) {
+// ── Order Summary ─────────────────────────────────────────────────────────────
+function OrderSummary({ final_total, original_total, paymentMode, orderPlaceHandler, isPlacingOrder, isRazorpayLoading }) {
   const extra = paymentMode === 0 ? 49 : 0;
+  const disabled = isPlacingOrder || isRazorpayLoading;
+
   return (
     <div className="lg:col-span-1">
       <div className="bg-white rounded-2xl shadow-lg p-8 border border-slate-100 sticky top-[170px]">
@@ -264,7 +331,7 @@ function OrderSummary({ final_total, original_total, paymentMode, orderPlaceHand
           <div className="flex justify-between text-slate-600">
             <span>Discount</span>
             <span className="font-semibold text-green-600">
-              -{toLocalPrice(original_total - final_total)}
+              -{toLocalPrice((original_total || 0) - (final_total || 0))}
             </span>
           </div>
 
@@ -277,22 +344,35 @@ function OrderSummary({ final_total, original_total, paymentMode, orderPlaceHand
 
           <div className="border-t-2 border-slate-200 pt-4 flex justify-between">
             <span className="font-bold text-slate-800">Total</span>
-            <span className="text-2xl font-bold text-teal-600">{toLocalPrice(final_total + extra)}</span>
+            <span className="text-2xl font-bold text-teal-600">
+              {toLocalPrice((final_total || 0) + extra)}
+            </span>
           </div>
         </div>
 
         <button
           onClick={orderPlaceHandler}
-          className="w-full bg-gradient-to-r from-teal-500 to-teal-600 text-white font-bold py-4 rounded-xl hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
+          disabled={disabled}
+          className="w-full bg-gradient-to-r from-teal-500 to-teal-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
         >
-          <FaCheckCircle /> {paymentMode === 1 ? "PROCEED TO PAYMENT" : "PLACE ORDER"}
+          {isPlacingOrder ? (
+            <>
+              <FaSpinner className="animate-spin" />
+              Processing...
+            </>
+          ) : (
+            <>
+              <FaCheckCircle />
+              {paymentMode === 1 ? "PROCEED TO PAYMENT" : "PLACE ORDER"}
+            </>
+          )}
         </button>
 
         <button className="mt-4 w-full border border-slate-300 text-slate-600 py-3 rounded-xl hover:bg-slate-100 transition">
           <Link href="/cart">Back to Cart</Link>
         </button>
 
-        <p className="text-center text-xs text-slate-500 mt-4">✓ Secure & encrypted payment</p>
+        <p className="text-center text-xs text-slate-500 mt-4">✓ Secure &amp; encrypted payment</p>
       </div>
     </div>
   );
