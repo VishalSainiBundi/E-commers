@@ -2,9 +2,12 @@ import Link from "next/link";
 import StatusBtn from "@/Components/admin/status_Btn";
 import Delete from "@/Components/admin/delete_Btn";
 import { getCategory } from "@/api-colls/category";
+
+export const dynamic = "force-dynamic";
+
 export default async function CategoryListing() {
   const res = await getCategory();
-  const categories = res.category;
+  const categories = res.category ?? [];
   // console.log(categories)
 
   return (

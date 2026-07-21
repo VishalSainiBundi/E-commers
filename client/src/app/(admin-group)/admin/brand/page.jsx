@@ -2,9 +2,12 @@ import Link from "next/link";
 import StatusBtn from "@/Components/admin/status_Btn";
 import Delete from "@/Components/admin/delete_Btn";
 import { getBrand } from "@/api-colls/brand";
+
+export const dynamic = "force-dynamic";
+
 export default async function BrandListing() {
   const res = await getBrand();
-  const categories = res.brand;
+  const categories = res.brand ?? [];
 
   return (
     <div className="min-h-screen p-10 bg-gray-50 text-gray-900 max-w-full mx-auto">

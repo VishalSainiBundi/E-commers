@@ -2,6 +2,9 @@ import Link from "next/link";
 import StatusBtn from "@/Components/admin/status_Btn";
 import Delete from "@/Components/admin/delete_Btn";
 import { getColor } from "@/api-colls/color";
+
+export const dynamic = "force-dynamic";
+
 export default async function ColorListing() {
   const res = await getColor();
 const color = res.color || [];
@@ -49,7 +52,7 @@ const color = res.color || [];
 
                 {/* STATUS */}
                 <td className="p-4">
-                  <StatusBtn status={cat.status.toString()} url={`color/status/${cat._id}`} flag="1" label="status" />
+                  <StatusBtn status={cat.status.toString()} url={`/color/status/${cat._id}`} flag="1" label="status" />
                   
                 </td>
                 

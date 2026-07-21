@@ -17,7 +17,7 @@ async function getColor() {
 
 async function getColorById(id) {
     try {
-        const response = await axiosApiInstrector.get(`color/${id}`);
+        const response = await axiosApiInstrector.get(`/color/${id}`);
         if (response.data.flag == 0) {
             console.log(response.data);
             return response.data;

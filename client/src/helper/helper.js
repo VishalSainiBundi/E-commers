@@ -17,8 +17,10 @@ function generateSlug(text) {
 const notify = (msg, flag) => 
   toast(msg, { type: flag == 0 ? "success" : "error" });
 
-const axiosApiInstrector=axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL
+const axiosApiInstrector = axios.create({
+  baseURL:
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    "https://e-commers-tj4b.onrender.com/",
 })
 
 const toLocalPrice= (price)=>{

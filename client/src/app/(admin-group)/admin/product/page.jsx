@@ -3,10 +3,13 @@ import StatusBtn from "@/Components/admin/status_Btn";
 import Delete from "@/Components/admin/delete_Btn";
 import { getProduct } from "@/api-colls/product";
 import MultiImage from "@/Components/multipleImage";
+
+export const dynamic = "force-dynamic";
+
 export default async function productListing() {
   const res = await getProduct();
-  const product = res.product;
-  const img_Url=res.img_Url
+  const product = res.product ?? [];
+  const img_Url = res.img_Url ?? "";
 console.log(res)
   return (
     <div className="min-h-screen bg-gray-100 p-8">
